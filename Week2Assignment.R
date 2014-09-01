@@ -20,6 +20,10 @@ QuadraticFormula <- function(a, b, c){
     #
     # Returns:
     #   The roots of the quadratic as vector of two values
+    # Error Check for a = 0
+    if(a==0){
+        return('a must be a non-zero value')
+    }
     if(b^2 - (4 * a * c) < 0){
         x.1 <- (-b + sqrt(as.complex(b^2 - 4 * a * c))) / (2 * a)
         x.2 <- (-b - sqrt(as.complex(b^2 - 4 * a * c))) / (2 * a)
@@ -32,7 +36,7 @@ QuadraticFormula <- function(a, b, c){
     return(roots)
 }
 
-QuadraticFormula(4, 2, 2)
+QuadraticFormula(0, 2, 2)
 
 
 #### Question 3 ####
