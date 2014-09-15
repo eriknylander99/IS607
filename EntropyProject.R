@@ -28,7 +28,6 @@ infogain <- function(vec.d, vec.a){
     #       information gain.
     att.count <- table(vec.a)
     probs <- att.count/length(vec.a)
-    att.name <- 
     result <- vector()
     for(i in 1:length(att.count)){
         newdata <- t(subset(dataset, vec.a == names(att.count[i]), select = answer))
