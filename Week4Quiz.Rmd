@@ -1,0 +1,222 @@
+Week 4 Quiz
+========================================================
+
+Importing the ggplot2 package and the data set for this weeks quiz.
+```{r Importing tools and data}
+require(ggplot2)
+require(plyr)
+require(grid)
+require(gridExtra)
+data(movies)
+```
+
+### Question 1
+Showing total number of movies for each decade: Setting the binwidth to 10 creates bins that are a decade wide.
+```{r Total by Decade}
+g <- ggplot(data = movies, aes(x = year)) + geom_histogram(binwidth = 10)
+g
+```
+
+### Question 2
+Show the average IMDB rating for movies by genere over time:
+First we will use the ddply function to generate a subset of the data for each of the categories and create graph for each of subsets.
+```{r Average Rating by Genre}
+genre <- c("Action", "Animation", "Comedy", "Drama", "Documentary", "Romance", "Short")
+
+# Action Movies
+action.movies <- subset(movies, Action == 1)
+action.average <- ddply(action.movies, c("year", "mpaa", "Action"), function(x)c(mean(x$rating)))
+names(action.average)[4] <- "rating"
+action <- 
+    ggplot(data=action.average, aes(x = year, y = rating)) + 
+    geom_point(aes(colour = mpaa)) + 
+    geom_smooth(method = "lm") +
+    ggtitle("Action Movies")
+
+# Animated Movies
+animation.movies <- subset(movies, Animation == 1)
+animation.average <- 
+    ddply(animation.movies, c("year", "mpaa", "Animation"), function(x)c(mean(x$rating)))
+names(animation.average)[4] <- "rating"
+animation <- 
+    ggplot(data=animation.average, aes(x = year, y = rating)) + 
+    geom_point(aes(colour = mpaa)) + 
+    geom_smooth(method = "lm") +
+    ggtitle("Animated Movies")
+
+# Comedy Movies
+comedy.movies <- subset(movies, Comedy == 1)
+comedy.average <- 
+    ddply(comedy.movies, c("year", "mpaa", "Comedy"), function(x)c(mean(x$rating)))
+names(comedy.average)[4] <- "rating"
+comedy <- 
+    ggplot(data=comedy.average, aes(x = year, y = rating)) + 
+    geom_point(aes(colour = mpaa)) + 
+    geom_smooth(method = "lm") +
+    ggtitle("Comedy Movies")
+
+# Drama Movies
+drama.movies <- subset(movies, Drama == 1)
+drama.average <- 
+    ddply(drama.movies, c("year", "mpaa", "Drama"), function(x)c(mean(x$rating)))
+names(drama.average)[4] <- "rating"
+drama <- 
+    ggplot(data=drama.average, aes(x = year, y = rating)) + 
+    geom_point(aes(colour = mpaa)) + 
+    geom_smooth(method = "lm") +
+    ggtitle("Drama Movies")
+
+# Documentary Movies
+documentary.movies <- subset(movies, Documentary == 1)
+documentary.average <- 
+    ddply(documentary.movies, c("year", "mpaa", "Documentary"), function(x)c(mean(x$rating)))
+names(documentary.average)[4] <- "rating"
+documentary <- 
+    ggplot(data=documentary.average, aes(x = year, y = rating)) + 
+    geom_point(aes(colour = mpaa)) + 
+    geom_smooth(method = "lm") +
+    ggtitle("Documentary Movies")
+
+# Romance Movies
+romance.movies <- subset(movies, Romance == 1)
+romance.average <- 
+    ddply(romance.movies, c("year", "mpaa", "Romance"), function(x)c(mean(x$rating)))
+names(romance.average)[4] <- "rating"
+romance <- 
+    ggplot(data=romance.average, aes(x = year, y = rating)) + 
+    geom_point(aes(colour = mpaa)) + 
+    geom_smooth(method = "lm") +
+    ggtitle("Romance Movies")
+
+# Short Films
+short.movies <- subset(movies, Short == 1)
+short.average <- 
+    ddply(short.movies, c("year", "mpaa", "Short"), function(x)c(mean(x$rating)))
+names(short.average)[4] <- "rating"
+short <- 
+    ggplot(data=short.average, aes(x = year, y = rating)) + 
+    geom_point(aes(colour = mpaa)) + 
+    geom_smooth(method = "lm") +
+    ggtitle("Short Movies")
+```
+
+Now that we have the data for all of the different genres we will graph them to look for trends. We also color the graph by mpaa rating to add some color and see if there are any trends in the ratings.
+
+```{r}
+grid.arrange(action, animation, comedy, drama, documentary, romance, short, ncol = 2)
+```
+
+Looking at the plots along with a linear curve fitted to the data we can see following trends.
+Action and Romance movie ratings are decreasing over time.
+Animated, Comedy, and Drama movie ratings are staying constant over time.
+Documentary and Short films ratings are increasing over time.
+
+### Question 3
+Is there a relation between the length of movie and the rating.
+```{r}
+length.rating <- ggplot(data=movies, aes(x = rating, y = length)) + geom_point()
+length.rating
+```
+
+Looking at this plot we see that there are some outliers are skewing the data. We will subset the data to see if there are trends in movies between 50 and  180 minutes and also look for trends in movies less than 50 minutes and greater then 180 minutes.
+
+```{r}
+movies.180 <- subset(movies, length > 50 & length < 180)
+rating.180 <- ggplot(data = movies.180, aes(x = length, y = rating)) + 
+    geom_point() +
+    geom_smooth(method = "lm") +
+    ggtitle("Movies between 50 and 180 Minutes")
+
+movies.50 <- subset(movies, length < 50)
+rating.50 <- ggplot(data = movies.50, aes(x = length, y = rating)) + 
+    geom_point() +
+    geom_smooth(method = "lm") +
+    ggtitle("Movies less than 50 minutes")
+
+movies.long <- subset(movies, length > 180)
+rating.long <- ggplot(data = movies.long, aes(x = length, y = rating)) + 
+    geom_point() +
+    geom_smooth(method = "lm") +
+    ggtitle("Movies greater than 180 Minutes")
+```
+
+Graphing these three together we see the following.
+
+```{r}
+grid.arrange(rating.50, rating.180, rating.long, ncol = 2)
+```
+
+From the graphs we can see that there is a slight positive relationship between the length of a film and it's IMDB rating for short films < 50 minutes and feature films. There is reatlationship is harder to determine for movies greater than 180 minutes. Also a 95+ hour movie, really? I think this qualifies as an outlier!
+
+### Question 4
+To determine if there is a relationship between length of move and genre we will use the subsetting of the data set from above to graph the length vs genre.
+
+```{r}
+action.length <- ggplot(data = action.movies, aes(y = length, x = 1 )) + 
+    geom_violin() + 
+    ggtitle("Action Movies")
+
+animation.length <- ggplot(data = animation.movies, aes(y = length, x = 1 )) + 
+    geom_violin() + 
+    ggtitle("Animated Movies")
+
+comedy.length <- ggplot(data = comedy.movies, aes(y = length, x = 1 )) + 
+    geom_violin() + 
+    ggtitle("Comedy Movies")
+
+documentary.length <- ggplot(data = documentary.movies, aes(y = length, x = 1 )) + 
+    geom_violin() + 
+    ggtitle("Documentary Movies")
+
+drama.length <- ggplot(data = drama.movies, aes(y = length, x = 1 )) + 
+    geom_violin() + 
+    ggtitle("Drama Movies")
+
+romance.length <- ggplot(data = romance.movies, aes(y = length, x = 1 )) + 
+    geom_violin() + 
+    ggtitle("Romance Movies")
+
+short.length<- ggplot(data = short.movies, aes(y = length, x = 1 )) + 
+    geom_violin() + 
+    ggtitle("Short Films")
+```
+
+I've chosen to use violen plots so that we can get a sense for the density of the distribution.
+
+```{r}
+grid.arrange(action.length, animation.length, comedy.length, documentary.length, ncol = 2) 
+grid.arrange(drama.length, romance.length, short.length, ncol = 2)
+```
+
+From the graphs we can see that Action, Comedy, Romance, Drama, and Documentary movies have a length that is with a highest density around 100 minutes. While Animated movies and Short films are much shorter with the largest number around the 15 minute mark.
+
+### Question 5
+Which variable best predicts the total number of votes recieved.
+
+```{r}
+length <- ggplot(data = movies.180, aes(x = length, y = votes)) + 
+    geom_point() +
+    geom_smooth(method = "lm")
+
+year <- ggplot(data = movies, aes(x = year, y = votes)) + 
+    geom_point() +
+    geom_smooth(method = "lm")
+
+rating <- ggplot(data = movies, aes(x = rating, y = votes)) + 
+    geom_point() +
+    geom_smooth(method = "lm")
+
+movie.budget <- subset(movies, budget != 0)
+
+budget <- ggplot(data = movie.budget, aes(x = budget, y = votes)) + 
+    geom_point() +
+    geom_smooth(method = "lm")
+```
+
+Graphing the these we find.
+
+```{r}
+grid.arrange(length, year, rating, budget, ncol = 2)
+```
+
+From these graphs it seems that the best predictor of the number of votes is the budget of the movie. Although there is an interesting shape to teh relationship between the number of votes and the rating. I would imply from this that movies that are well recived or movies that spend a lot more money are voted on more often. There is also an interesting shape to the votes vs. year which would make sense because people are more likely to vote on newly released movies.
