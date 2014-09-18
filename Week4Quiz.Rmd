@@ -18,7 +18,7 @@ g
 ```
 
 ### Question 2
-Show the average IMDB rating for movies by genere over time:
+Show the average IMDB rating for movies by genre over time:
 First we will use the ddply function to generate a subset of the data for each of the categories and create graph for each of subsets.
 ```{r Average Rating by Genre}
 genre <- c("Action", "Animation", "Comedy", "Drama", "Documentary", "Romance", "Short")
@@ -146,7 +146,7 @@ Graphing these three together we see the following.
 grid.arrange(rating.50, rating.180, rating.long, ncol = 2)
 ```
 
-From the graphs we can see that there is a slight positive relationship between the length of a film and it's IMDB rating for short films < 50 minutes and feature films. There is reatlationship is harder to determine for movies greater than 180 minutes. Also a 95+ hour movie, really? I think this qualifies as an outlier!
+From the graphs we can see that there is a slight positive relationship between the length of a film and it's IMDB rating for short films < 50 minutes and feature films. There is relationship is harder to determine for movies greater than 180 minutes. Also a 95+ hour movie, really? I think this qualifies as an outlier!
 
 ### Question 4
 To determine if there is a relationship between length of move and genre we will use the subsetting of the data set from above to graph the length vs genre.
@@ -181,7 +181,7 @@ short.length<- ggplot(data = short.movies, aes(y = length, x = 1 )) +
     ggtitle("Short Films")
 ```
 
-I've chosen to use violen plots so that we can get a sense for the density of the distribution.
+I've chosen to use violin plots so that we can get a sense for the density of the distribution.
 
 ```{r Plotting the Violin Plots}
 grid.arrange(action.length, animation.length, comedy.length, documentary.length, ncol = 2) 
@@ -191,7 +191,7 @@ grid.arrange(drama.length, romance.length, short.length, ncol = 2)
 From the graphs we can see that Action, Comedy, Romance, Drama, and Documentary movies have a length that is with a highest density around 100 minutes. While Animated movies and Short films are much shorter with the largest number around the 15 minute mark.
 
 ### Question 5
-Which variable best predicts the total number of votes recieved.
+Which variable best predicts the total number of votes received.
 
 ```{r Exploratory Plots for votes recieved}
 length <- ggplot(data = movies.180, aes(x = length, y = votes)) + 
@@ -219,4 +219,4 @@ Graphing the these we find.
 grid.arrange(length, year, rating, budget, ncol = 2)
 ```
 
-From these graphs it seems that the best predictor of the number of votes is the budget of the movie. Although there is an interesting shape to the relationship between the number of votes and the rating. I would say that movies that are well recieved or movies that have large budgets are voted on more often. There is also an interesting shape to the votes vs. year which would make sense because people are more likely to vote on newly released movies as opposed to going back and voting on older movies.
+From these graphs it seems that the best predictor of the number of votes is the budget of the movie. Although there is an interesting shape to the relationship between the number of votes and the rating. I would say that movies that are well received or movies that have large budgets are voted on more often. There is also an interesting shape to the votes vs. year which would make sense because people are more likely to vote on newly released movies as opposed to going back and voting on older movies.
