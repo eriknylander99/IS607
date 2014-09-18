@@ -102,7 +102,7 @@ short <-
 
 Now that we have the data for all of the different genres we will graph them to look for trends. We also color the graph by mpaa rating to add some color and see if there are any trends in the ratings.
 
-```{r}
+```{r Plotting Year vs Rating}
 grid.arrange(action, animation, comedy, drama, documentary, romance, short, ncol = 2)
 ```
 
@@ -113,14 +113,14 @@ Documentary and Short films ratings are increasing over time.
 
 ### Question 3
 Is there a relation between the length of movie and the rating.
-```{r}
+```{r Plotting all IMDB Ratings and Lengths}
 length.rating <- ggplot(data=movies, aes(x = rating, y = length)) + geom_point()
 length.rating
 ```
 
 Looking at this plot we see that there are some outliers are skewing the data. We will subset the data to see if there are trends in movies between 50 and  180 minutes and also look for trends in movies less than 50 minutes and greater then 180 minutes.
 
-```{r}
+```{r Subseting the Movie Lengths}
 movies.180 <- subset(movies, length > 50 & length < 180)
 rating.180 <- ggplot(data = movies.180, aes(x = length, y = rating)) + 
     geom_point() +
@@ -142,7 +142,7 @@ rating.long <- ggplot(data = movies.long, aes(x = length, y = rating)) +
 
 Graphing these three together we see the following.
 
-```{r}
+```{r Plotting the Movies}
 grid.arrange(rating.50, rating.180, rating.long, ncol = 2)
 ```
 
@@ -151,7 +151,7 @@ From the graphs we can see that there is a slight positive relationship between 
 ### Question 4
 To determine if there is a relationship between length of move and genre we will use the subsetting of the data set from above to graph the length vs genre.
 
-```{r}
+```{r Using a violin plot to look at length vs genre}
 action.length <- ggplot(data = action.movies, aes(y = length, x = 1 )) + 
     geom_violin() + 
     ggtitle("Action Movies")
@@ -183,7 +183,7 @@ short.length<- ggplot(data = short.movies, aes(y = length, x = 1 )) +
 
 I've chosen to use violen plots so that we can get a sense for the density of the distribution.
 
-```{r}
+```{r Plotting the Violin Plots}
 grid.arrange(action.length, animation.length, comedy.length, documentary.length, ncol = 2) 
 grid.arrange(drama.length, romance.length, short.length, ncol = 2)
 ```
@@ -193,7 +193,7 @@ From the graphs we can see that Action, Comedy, Romance, Drama, and Documentary 
 ### Question 5
 Which variable best predicts the total number of votes recieved.
 
-```{r}
+```{r Exploratory Plots for votes recieved}
 length <- ggplot(data = movies.180, aes(x = length, y = votes)) + 
     geom_point() +
     geom_smooth(method = "lm")
@@ -215,8 +215,8 @@ budget <- ggplot(data = movie.budget, aes(x = budget, y = votes)) +
 
 Graphing the these we find.
 
-```{r}
+```{r Making the Plots}
 grid.arrange(length, year, rating, budget, ncol = 2)
 ```
 
-From these graphs it seems that the best predictor of the number of votes is the budget of the movie. Although there is an interesting shape to teh relationship between the number of votes and the rating. I would imply from this that movies that are well recived or movies that spend a lot more money are voted on more often. There is also an interesting shape to the votes vs. year which would make sense because people are more likely to vote on newly released movies.
+From these graphs it seems that the best predictor of the number of votes is the budget of the movie. Although there is an interesting shape to the relationship between the number of votes and the rating. I would say that movies that are well recieved or movies that have large budgets are voted on more often. There is also an interesting shape to the votes vs. year which would make sense because people are more likely to vote on newly released movies as opposed to going back and voting on older movies.
