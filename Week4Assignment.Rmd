@@ -1,0 +1,84 @@
+When were the "Best" Popular Movies Made?
+========================================================
+Week 4 Assignment
+--------------------------------------------------------
+
+
+```{r}
+require(ggplot2)
+require(dplyr)
+data(movies)
+movies_df <- tbl_df(movies)
+```
+
+
+For this assignment we need to determine the year when the "best popular" movies were made. To determine which movies fit in this category we decided to define "best" and "popular" in the following ways.
+
+
+__Best Movies__ - We chose to use the IMDB rating to determine which movies were the "best". We decided that we would include any movie greater than one standard deviation from the mean rating.
+
+```{r}
+best <- mean(movies$rating) + sd(movies$rating)
+best
+```
+
+
+__Popular Movies__ - We chose to us the number of times that a movie was rated to determine it's popularity. This does lead to a possible issue that we can see from the following plot.
+```{r Plot of votes by year}
+ggplot(data = movies, aes(x = year, y = votes)) + 
+    geom_point() +
+    ggtitle("Number of Votes per Year")
+
+```
+
+
+It appears that movies were more likely to be rated if they were released more recently then movies that were released before 1935. However with this data set this was the best measure that we could come up with. We choose to also pick movies that were greater than one standard deviation from the mean number of votes.
+
+```{r}
+popular <- mean(movies$votes) + sd(movies$votes)
+popular
+```
+
+
+As an interesting aside, we initially used two standard deviations for both selectors but ended up with a small data set of two excellent movies that I enjoyed watching, however these are not enough to make the problem interesting!
+```{r Just two Movies}
+pop <- mean(movies$votes) + 2*sd(movies$rating)
+bst <- mean(movies$rating) + 2*sd(movies$rating)
+movies_df %>%
+    filter(votes > pop, rating > bst) %>%
+    select(title, year, rating, votes)
+```
+
+
+Next we decided to graph the 'best popular' movies to see what we could find.
+```{r}
+best.years <- movies_df %>%
+    group_by(year) %>%
+    filter(votes > popular, rating > best) %>%
+    summarise(avgrating = mean(rating))
+
+ggplot(best.years, aes(x = year, y = avgrating))+
+    geom_point()+
+    geom_smooth(method = loess)+
+    ggtitle("Average of the 'best popular' Movie Ratings by Year")
+```
+
+
+
+We then used the dplyr() package to filter the movies data down to the year or years that had the highest average rated movies based on popularity.
+```{r Selecting the best years}
+movies_df %>%
+    group_by(year) %>%
+    filter(votes > popular, rating > best) %>%
+    summarise(avgrating = mean(rating)) %>%
+    filter(avgrating == max(avgrating))
+```
+
+
+This leads us to conclude that the year when the best popular movies were made was 1941 with an average rating of the popular movies of 8.55. Looking at the movies that made up this year we get the following two movies which are real classics:
+
+```{r}
+movies_df %>%
+    group_by(title) %>%
+    filter(votes > popular, rating > best, year == 1941)
+```
