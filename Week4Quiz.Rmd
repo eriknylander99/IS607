@@ -12,7 +12,7 @@ data(movies)
 
 ### Question 1
 Showing total number of movies for each decade: Setting the binwidth to 10 creates bins that are a decade wide.
-```{r Total by Decade}
+```{r fig.width=10, fig.height=7}
 g <- ggplot(data = movies, aes(x = year)) + geom_histogram(binwidth = 10)
 g
 ```
@@ -102,7 +102,7 @@ short <-
 
 Now that we have the data for all of the different genres we will graph them to look for trends. We also color the graph by mpaa rating to add some color and see if there are any trends in the ratings.
 
-```{r Plotting Year vs Rating}
+```{r fig.width=10, fig.height=7}
 grid.arrange(action, animation, comedy, drama, documentary, romance, short, ncol = 2)
 ```
 
@@ -113,7 +113,7 @@ Documentary and Short films ratings are increasing over time.
 
 ### Question 3
 Is there a relation between the length of movie and the rating.
-```{r Plotting all IMDB Ratings and Lengths}
+```{r fig.width=10, fig.height=10}
 length.rating <- ggplot(data=movies, aes(x = rating, y = length)) + geom_point()
 length.rating
 ```
@@ -142,7 +142,7 @@ rating.long <- ggplot(data = movies.long, aes(x = length, y = rating)) +
 
 Graphing these three together we see the following.
 
-```{r Plotting the Movies}
+```{r fig.width=10, fig.height=7}
 grid.arrange(rating.50, rating.180, rating.long, ncol = 2)
 ```
 
@@ -183,7 +183,7 @@ short.length<- ggplot(data = short.movies, aes(y = length, x = 1 )) +
 
 I've chosen to use violin plots so that we can get a sense for the density of the distribution.
 
-```{r Plotting the Violin Plots}
+```{r fig.width=10, fig.height=7}
 grid.arrange(action.length, animation.length, comedy.length, documentary.length, ncol = 2) 
 grid.arrange(drama.length, romance.length, short.length, ncol = 2)
 ```
@@ -215,7 +215,7 @@ budget <- ggplot(data = movie.budget, aes(x = budget, y = votes)) +
 
 Graphing the these we find.
 
-```{r Making the Plots}
+```{r fig.width=10, fig.height=7}
 grid.arrange(length, year, rating, budget, ncol = 2)
 ```
 
