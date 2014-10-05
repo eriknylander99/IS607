@@ -1,0 +1,63 @@
+---
+title: "Week 6 Assignment"
+author: "Erik Nylander"
+date: "Tuesday, September 30, 2014"
+output: html_document
+---
+
+Week 6 Assignment - rvest
+=====================================
+
+Loading the rvest package:
+```{r}
+library(rvest)
+library(dplyr)
+```
+
+
+For this assignment I've decided to take a look at the InciWeb website. This is a collection of the active wildfire incidents in the United States.
+```{r}
+inciweb <- html("http://inciweb.nwcg.gov/")
+```
+
+
+The first thing to do is read in the table of incidents that have been reported recently.
+```{r}
+incidents <- inciweb %>%
+    html_nodes(".data") %>%
+    html_table()
+incidents_df <- tbl_df(incidents[[1]])
+incidents[[1]]
+incidents_df
+``` 
+
+
+The second feature I want to pull from the site is the recent articles added to the site.
+```{r}
+articles <- inciweb %>%
+    html_nodes(".right_block li") %>%
+    html_text()
+articles[1:4]
+```
+
+
+Optional Exercise:
+```{r}
+# list all available demos
+demo(package = "rvest")
+# lists code for tripadvisor demo; follow instructions 
+# in your RStudio console window.
+demo("tripadvisor", "rvest")
+```
+The tripadvisor demo worked well but the united demo failed as the application tried to log into the site. The very interesting part was seeing how to use the follow link to work through parts of a website. It's also enlightening to see how dificult it is to scrape a website and how much you need to specialize code to work through a single site that interests you.
+
+Optional Exercise 2:
+```{r}
+require(XML)
+table <- readHTMLTable(inciweb)
+table_df <- tbl_df(table[[1]])
+table_df
+```
+
+
+Reading the table of data in from the wesite was similar in both cases although it is easier to read the %>% method. However the other tools were more difficult to use to try and read in other information of the site. While I was able to easily get the headline off the site using rvest I still have not managed to get the same infromation using XML. Once again I also prefer the simpler interface of Wickham's design over the massive number of arguments that can be passed to XML.
