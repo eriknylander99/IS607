@@ -1,0 +1,254 @@
+---
+title: "MSDA 607 - Final Project"
+author: "Erik Nylander"
+output: html_document
+---
+An Analysis of Human Caused Fire in Virginia
+--------------------------------------------
+Wildland forest fires are an issue that plagues much of the United States and can be started by a number of different sources from lightning and power lines to debris burning and arson. A rather disturbing piece of data according to the National Interagency Fire Center (www.nifc.gov)  is that humans cause an average of 62,631 fires a year across the US which add up to over 2.5 million acres burned a year. The majority of these fires, 67%, are in the US Forest Service's Eastern and Southern Regions with nearly 40% of the total acres in the Southern Region.  This issue is also one that effects our family personally. Part of my wife's job for the Virginia Department of Forestry is responding to wild fires. Her agency is also struggling with how to respond to fires. They have faced a sever reduction in force over the last 15 years going from approximately 300 trained wildland fire fighters to 150. With these limited resources it has fallen more often than not to local volunteer fire companies to deal with wild fires. Now as the state faces even further budget cuts the question has arisen as to where to spend fire and education resources and how can the state reduce the number of fires that are caused by humans?  
+
+The main goal of this project is to determine if there is are any relationships between the counties that have the largest percentages of human cause fire and demographic data about these locations. There is a belief that the areas with the most human caused fires in the state tend to be the rural counties that have smaller populations, are in general poorer, and have the most limited resources because of their low populations and tax bases. At the end of this project I hope to be able to have a data based answer to that question. The data that I will be using is a summary of the United States' 2010 Census data sourced from http://en.wikipedia.org/wiki/Virginia_locations_by_per_capita_income and a data set on the fires and causes for the state of Virginia sourced from https://fam.nwcg.gov/fam-web/ . There appears to have been a change to a person's ability to get data from this website over the last few weeks so I will be using a pull of the data that I generated for a possible weekly assignment data set a few weeks ago.
+
+The two questions that we want to answer throughout the project are:  
+_Is there a relationship between the precentage of fires that are human caused and the income in an area?_  
+_Is there a relationship between the percentage of fires that are human caused and the population in an area?_
+
+#### Data Sets
+Downloading the Virginia fire data from 2001 - 2013
+```{r eval=FALSE}
+file <- 'https://raw.githubusercontent.com/eriknylander99/Data/master/NASF_State_Data_Final_Project.csv'
+download.file(file, destfile = 'va_fire.csv')
+```
+
+Downloading the State Population and Household Income Data
+```{r eval=FALSE}
+file <- 'https://raw.githubusercontent.com/eriknylander99/Data/master/Wiki_State_Demographics.csv'
+download.file(file, destfile = 'va_demo.csv')
+```
+
+Downloading the Shapefile for the counties of Virginia
+```{r eval=FALSE}
+file <- 'ftp://ftp2.census.gov/geo/pvs/tiger2010st/51_Virginia/51/tl_2010_51_county10.zip'
+download.file(file, destfile = 'census.zip')
+unzip('census.zip')
+```
+
+Loading the data into R.
+```{r message=FALSE}
+require(dplyr)
+require(ggplot2)
+```
+
+```{r}
+firetmp <- read.csv('va_fire.csv', stringsAsFactors = FALSE)
+firetmp <- tbl_df(firetmp)
+str(firetmp)
+demotmp <- read.csv('va_demo.csv', stringsAsFactors = FALSE)
+demotmp <- tbl_df(demotmp)
+str(demotmp)
+```
+
+The state fire data contains a date column that needs to I will convert from string to date for the possibility of a time-series based analysis in the future.
+```{r}
+firetmp$Fire_Discovery_Date <- as.Date(firetmp$Fire_Discovery_Date, "%m/%d/%Y")
+```
+
+The fire data set contains 13,233 different incidents that the Virginia Department of Forestry has responded to over the 13 year period from 2001 to 2013. This is not the total number of wildland fires that occurred during this time period as this data is only for the fires that a VDOF employee responded to and completed a fire report. The data does not include the many small grass and wild fires that are dealt with by local fire companies. The demographic data set contains 134 rows for the cities and counties in Virginia from the 2010 Census Data.  
+
+#### Cleaning the Data
+The question that I am trying to answer has to do with human caused fires in the state of Virginia so some work needs to be done with the state fire data to prepare it for analysis. The first few steps will be to drop columns that we don't need and to remove any rows that do not contain data on the statistical causes for the fire.
+```{r}
+fire_df <- firetmp %>%
+    select(Fire_Discovery_Date, State, State.FIPS, County, County_FIPS, Statistical_Cause_Code,
+           Residences_Threatened, Residences_Destroyed, Other_Structures_Threatened, Other_Structures_Destroyed,
+           Final_Fire_Acre_Quantity) %>%
+    filter(!is.na(Statistical_Cause_Code)) %>%
+    filter(Statistical_Cause_Code <=9)
+```
+
+The data set now contains information about the wildland fires reported in the state of Virginia that have a valid statistical cause code. These codes can be seen in the table below. 
+
+USFS Code | Statistical cause
+--------- | --------------
+1         | Lightning
+2         | Equipment use
+3         | Smoking
+4         | Campfire
+5         | Debris burning
+6         | Railroad 
+7         | Arson
+8         | Children
+9         | Miscellaneous
+
+```{r}
+ggplot(fire_df, aes(factor(Statistical_Cause_Code), 
+                             fill = factor(Statistical_Cause_Code,
+                                           labels = c('1-Lightning', '2-Equipment Use', '3-Smoking',
+                                                      '4-Campfire', '5-Debris Burning', '6-Railroad',
+                                                      '7-Arson', '8-Children', '9-Misc')))) +
+    geom_histogram(binwidth = 1) + 
+    labs(x='Cause Code', y='Total Number of Fires', fill = 'Cause Code') +
+    ggtitle('Total Number of Fires by Cause')
+```
+
+### Answering the Main Questions
+
+_Is there a relationship between the percentage of fires that are human caused and the income in an area?_  
+_Is there a relationship between the percentage of fires that are human caused and the population in an area?_
+
+To answer these questions the first step is to determine which causes to use as 'Human Caused'. It's can be argued that most of the above causes are 'Human', however, for this analysis we will focus on the two causes that are the most common ones that my wife has to respond to: arson and debris burning. The next step of the analysis is to determine the percent of the fires in a given county are caused by these two factors.
+
+```{r}
+fire <- fire_df %>%
+    group_by(County, County_FIPS, Statistical_Cause_Code) %>%
+    summarise(cause = n(),
+              acres = sum(Final_Fire_Acre_Quantity)) %>%
+    mutate(cause_per = round((cause/sum(cause))*100, digits=3))
+fire
+```
+
+Now the data is aggregated by fire cause we can now continue to further aggregate the data to generate a single result per county focusing on just the human caused fires and their percent of the total fires in a county.
+```{r}
+human <- fire %>%
+    group_by(County, County_FIPS) %>%
+    filter(Statistical_Cause_Code == 5 | Statistical_Cause_Code == 7) %>%
+    summarise(humancaused = sum(cause),
+             percent_fires = sum(cause_per),
+             total_acres = sum(acres))
+head(human)
+```
+
+The data set now contains only the number of human caused fires, the percent of fires in each county caused by humans, and the total number of acres burned. The next task in preparing the data is to merge the data from the fire and demographic data frames.
+
+```{r}
+human.fire <- merge(human, demotmp, by.x = "County", by.y = "County_City")
+head(human.fire)
+```
+
+#### Analysis of Human Caused Fires
+
+For this analysis I will be investigating the relationship between the median household income, the county population and the percent of human caused fires. Finally I will be looking to see if there is any relationship between the income / population and the total amount of acres burned in a county through human causes.
+
+##### Median Household Income vs Human Caused Fires
+```{r}
+ggplot(human.fire, aes(Median_household_income, percent_fires)) + 
+    geom_point(colour = 'red', size = 3) + geom_smooth(method = lm) +
+    labs(x='Median Household Income', y='Percent of Human Caused Fires') +
+    ggtitle("Percent of Human Caused Fires vs Median Household Income")
+```
+
+From the above plot we can see that there my be a relationship between the percent of human caused fires in a given county and the median household income in the county. The first thing that I will check is if there is a linear relationship using R's built in linear model.
+
+```{r}
+x <- human.fire$Median_household_income
+y <- human.fire$percent_fires
+fit <- lm(y~x)
+summary(fit)
+```
+
+The results of this analysis indicate that there is a weak negative correlation between the Median Household Income and the percent fires indicating that there is the possibility that as income increases the percent of fire that is caused by humans decreases. However if we look closely at the graph there seems to be a non-linear relationship between the variables. I will re-plot the data using a loess regression model.
+
+```{r}
+ggplot(human.fire, aes(Median_household_income, percent_fires)) + 
+    geom_point(colour = 'red', size = 3) + geom_smooth(method = loess) +
+    labs(x='Median Household Income', y='Percent of Human Caused Fires') +
+    ggtitle("Percent of Human Caused Fires vs Median Household Income")
+```
+
+Looking at the graph of the loess regression with a log scale, there is a definite non-linear relationship to the data and it appears that there may be an exponential relationship between the median household income and the percent of human caused fires.
+
+```{r}
+exponential.model <- lm(-log(y)~ x)
+summary(exponential.model)
+```
+
+From the exponential model I can see that this is also not a strong predictor for the data set. This would be an area to continue to explore later on in the MSDA program once we have covered more statistical analysis tools.
+
+#### Population vs Human Caused Fires
+```{r}
+require(scales)
+ggplot(human.fire, aes(Population, percent_fires)) + 
+    geom_point(colour = 'red', size = 3) + geom_smooth(method = lm) + scale_x_log10(labels = comma) + 
+    labs(y='Percent of Human Caused Fires') +
+    ggtitle("Percent of Human Caused Fires vs Population")
+```
+
+Interestingly, there appears to be no relationship between the population of a given county and the percentage of fires in the county caused by humans. To further explore this, lets take a look at the linear model for the data.
+
+```{r}
+x <- human.fire$Population
+y <- human.fire$percent_fires
+fit <- lm(y~x)
+summary(fit)
+```
+
+This gives us a very low R and R^2 value and just further indicates that there is little to no relationship between the population of a given county and percent of human caused fires.
+
+#### Median Household Income vs Total Acres Burned in Human Caused Fires
+```{r}
+ggplot(human.fire, aes(Median_household_income, total_acres)) + 
+    geom_point(colour = 'blue', size = 3) + geom_smooth(method = lm) +
+    labs(x='Median Household Income', y='Total Acres Burned') +
+    ggtitle("Total Acres Burned by Human Caused Fires vs Median Household Income")
+```
+
+Once again there is no real relationship in this data but there is an interesting observation that the largest human caused fires in the state of Virginia have occurred in the poorest counties in the state.
+
+#### Population vs Total Acres Burned in Human Caused Fires
+```{r}
+ggplot(human.fire, aes(Population, total_acres)) + 
+    geom_point(colour = 'blue', size = 3) + geom_smooth(method = lm) + scale_x_log10(labels = comma) +
+    labs(y='Total Acres Burned') +
+    ggtitle("Total Acres Burned by Human Caused Fires vs Population")
+```
+
+This result is rather interesting, there is no real relationship between the total acres burned and the population. That being said all of the biggest human caused fires in the stat have happened in counties that are in the middle of the population curve. This raises some questions about what other factors are contributing to human caused fires in these counties.
+
+### Geographic Analysis
+
+The final Analysis that I will look at is a basic geographic analysis of the human caused fires in the state of Virginia to see if there are any patterns in the locations of counties with a high percentage of human caused fires. 
+
+The first part of the analysis is to load in the packages and the census shapefile that was download at the beginning of the project.
+
+```{r}
+require(ggmap)
+require(maptools) # Must have the rgeos() package installed for this portion
+va10 <- readShapeSpatial("tl_2010_51_county10.shp")
+vadata <- fortify(va10, region = 'COUNTYFP10') # requires rgeos()
+vadata$id <- as.numeric(vadata$id)
+va_info <- merge(vadata, human.fire, by.x = 'id', by.y = 'County_FIPS', all.x = TRUE)
+va_info <- arrange(va_info, group, order) # the data frame must be reordered from the merge to create the maps
+```
+
+Now that data and packages have been loaded into R the first thing that I will do is get a sense for the median household income across the state of Virginia. There is a need to limit the shading on the graph to exclude the Washington D.C. area from the analysis. This decision was made to see more shading across the state and to eliminate counties that see very little wildfire.
+
+#### Median Household Income accross Virginia
+```{r}
+ggplot(va_info, aes(x = long, y = lat, group = group, fill = (Median_household_income))) + 
+    scale_fill_gradient(limit = c(20000, 100000), low="green", high="white", na.value = 'grey50', labels = comma) + 
+    geom_polygon() + 
+    geom_path(color="Black") +
+    coord_map() +
+    labs(fill = 'Median Houshold\nIncome') +
+    ggtitle('Household Income in Counties with Human Caused Fires')
+```
+
+The areas of the state with the highest median household incomes are the areas around Northern Virginia / Washington D.C. and and the Richmond through Virginia Beach corridor. The poorest areas of the state are the agricultural counties in the south central part of the state and the region of Appalachia in south western Virginia. What will be interesting to see is if either of these areas has counties that have a higher percentage of human caused fires than the rest of the state. 
+
+#### Percent of Human Caused Fires accross Virginia
+```{r}
+ggplot(va_info, aes(x = long, y = lat, group = group,
+                    fill = percent_fires)) + 
+    scale_fill_gradient(low="White", high="red", na.value = 'grey50') + 
+    geom_polygon() + 
+    geom_path(color="Black") +
+    coord_map() +
+    labs(fill = 'Percent of\nHuman Caused Fires') +
+    ggtitle('Percentage of Human Caused Fire by County in Virginia')
+```
+
+The area of the state that with the largest percentage of human caused fires is the Appalachia area of south western Virginia. This area is also one of poorest areas in the state and has a number of interesting cultural and sociological differences from the rest of the state. However there area a few other 'hot spots' around the state that also lead to further questions. Why is there an area of increased human caused fires just west of the Northern Virginia area which is one of the most populous and wealthiest parts of the state? Another interesting question is, Why do we have one county that is just to the east of Appalachia that has an extremely low percentage of human caused fires? Like most analysis the number of of questions at the end of the project are greater than the number of questions that I had at the start. 
+
+### Conclusion
+
+As I have learned throughout this semester, the end of a data analysis project often leads to more nuanced view of the topic and more questions then I had when I started the project. Ultimately there are a number of factors that lead to human caused fires in the state of Virginia. There is a correlation between the median household incomes and percent of human caused fire that is pronounced in the poorest of counties. However, we also see a number of issues with fires in counties that are in the middle of the income range. Even though there is the expectation that there would be more fires in rural, low population counties, the data indicates that there needs to be a certain level of population before arson and debris burning become an issue. There are also interesting geographical relationships in the data. There geographical analysis reinforces the correlation between income and human caused fire but it also shows us that there are certain 'hot-spots' in the state. The largest one of these lies 'Coal Country' of Appalachia. This area of the state has very rugged terrain and a very different culture from the rest of the state. That being said there also pockets of higher percentages of human caused fire in areas of the state that also have a higher income. This project has just scratched the surface of the cultural, social, economic, and historical reasons for human caused fire throughout the state and while I found some correlations it's now obvious that the problem of human caused fire in the state of Virginia and the Southern United States is much more complicated then one would assume.
